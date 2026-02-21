@@ -25,6 +25,27 @@ PDF / DOCX files
 
 ---
 
+## Web UI
+
+Once running, the web UI is accessible at `http://localhost:8000` from the machine running the stack.
+
+**Accessing from other devices on your network:**
+If you're running Local RAG on a server or another machine, access it via the host's IP address:
+```
+http://192.168.x.x:8000
+```
+
+**Exposing to the internet:**
+Use a reverse proxy like [Caddy](https://caddyserver.com/) or [nginx](https://nginx.org/) in front of port 8000, or use a tunnel like [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) for zero-config public access.
+
+> ⚠️ There is no authentication built in — if exposing publicly, put it behind a password-protected reverse proxy.
+
+### Screenshot
+
+![Local RAG Web UI](docs/screenshot.png)
+
+---
+
 ## Platform Support
 
 | Platform | Docker | Native |
