@@ -17,7 +17,7 @@ ENV_FILE = Path("/app/host_env/.env")
 PROMPT = "Write a detailed technical explanation of how a CPU processes instructions."
 
 
-def wait_for_llm(timeout: int = 300) -> None:
+def wait_for_llm(timeout: int = 600) -> None:
     print("Waiting for LLM server...", end="", flush=True)
     deadline = time.time() + timeout
     while time.time() < deadline:

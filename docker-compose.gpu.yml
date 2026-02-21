@@ -3,16 +3,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cuda
+    image: local_rag-app-cuda
 
   ingest:
     build:
       context: .
       dockerfile: Dockerfile.cuda
+    image: local_rag-app-cuda
 
   llm:
     build:
       context: .
       dockerfile: Dockerfile.cuda
+    image: local_rag-app-cuda
     deploy:
       resources:
         reservations:
@@ -25,8 +28,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cuda
+    image: local_rag-app-cuda
 
   benchmark:
     build:
       context: .
       dockerfile: Dockerfile.cuda
+    image: local_rag-app-cuda

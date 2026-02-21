@@ -261,7 +261,8 @@ docker compose up -d   # picks up .env changes automatically
 | `.env` parameters (tokens, threads, context) | `docker compose up -d` |
 | New model | update `.env`, then `docker compose up -d` |
 | Python code changes | `docker compose build api && docker compose up -d` |
-| Switch CPU → GPU | update `.env`, then `docker compose build && docker compose up -d` |
+| Switch GPU layers on/off | set `LLM_GPU_LAYERS=-1` or `0` in `.env`, then `start.bat` (no rebuild needed) |
+| Switch CPU binary → GPU binary | set `CUDA_AVAILABLE=true` in `.env`, then `start.bat` (full rebuild) |
 | Update llama.cpp | `docker compose build llm && docker compose up -d` |
 
 ### Switching models
