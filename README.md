@@ -181,9 +181,28 @@ All settings live in `config.py` (native) and `.env` (Docker). They share the sa
 
 ## Enabling GPU
 
-### Native (run.sh)
+Using a GPU massively improves generation speed — expect 100–150 tok/s on a 4070 Ti vs 5–15 tok/s on CPU.
 
-1. Install CUDA toolkit:
+**Which CUDA version?** Install **CUDA 12** — it is stable, widely supported, and what llama.cpp officially targets. CUDA 13 also works but is newer and less tested.
+
+---
+
+### Windows (Docker — recommended)
+
+1. Install [CUDA Toolkit 12](https://developer.nvidia.com/cuda-downloads) — select Windows → x86_64 → exe (local)
+2. Verify: open CMD and run `nvidia-smi`
+3. Set in `.env`:
+```env
+CUDA_AVAILABLE=true
+LLM_GPU_LAYERS=-1
+```
+4. Run `start.bat` — it automatically uses the GPU compose override
+
+---
+
+### Linux / WSL2 (Native)
+
+1. Install CUDA 12 toolkit:
 ```bash
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_amd64.deb
 sudo dpkg -i cuda-keyring_1.1-1_amd64.deb
@@ -193,28 +212,26 @@ echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashr
 source ~/.bashrc
 ```
 2. Verify: `nvcc --version`
-3. Delete old build and rerun: `rm -rf llama.cpp/build && ./run.sh`
+3. Delete old llama.cpp build so it rebuilds with CUDA:
+```bash
+rm -rf llama.cpp/build
+```
 4. Set in `config.py`: `LLM_GPU_LAYERS = -1`
+5. Run `./run.sh`
 
-### Docker
+> **WSL2 users:** First install the [NVIDIA WSL2 driver](https://developer.nvidia.com/cuda/wsl) on Windows, then follow the steps above inside WSL.
 
-1. Set in `.env`:
+---
+
+### Linux / WSL2 (Docker)
+
+1. Follow the CUDA toolkit install steps above
+2. Set in `.env`:
 ```env
 CUDA_AVAILABLE=true
 LLM_GPU_LAYERS=-1
 ```
-2. Uncomment the `deploy` section in `docker-compose.yml`
-3. Rebuild and restart:
-```bash
-docker compose build
-docker compose up -d
-```
-
-### WSL2
-
-1. Install the [NVIDIA WSL2 driver](https://developer.nvidia.com/cuda/wsl) on **Windows**
-2. Verify GPU is visible inside WSL: `nvidia-smi`
-3. Follow the native CUDA steps above
+3. Run `./run.sh --docker`
 
 ---
 
