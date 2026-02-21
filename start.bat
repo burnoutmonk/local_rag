@@ -14,6 +14,13 @@ if "%CUDA_AVAILABLE%"=="true" (
     docker compose up -d --build
 )
 
+if errorlevel 1 (
+    echo.
+    echo ERROR: Docker Compose failed. See errors above.
+    pause
+    exit /b 1
+)
+
 echo Waiting for services to be ready...
 :wait
 docker inspect rag_ready --format "{{.State.Status}}" 2>nul | findstr "exited" >nul
@@ -24,3 +31,4 @@ if errorlevel 1 (
 
 echo Opening browser...
 start http://localhost:8000
+pause
