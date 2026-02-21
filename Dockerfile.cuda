@@ -6,11 +6,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN echo ">>> Building llama.cpp: CUDA GPU <<<"
-RUN git clone https://github.com/ggerganov/llama.cpp /llama.cpp --depth=1 \
-    && cmake -B /llama.cpp/build -S /llama.cpp -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=OFF -DGGML_CUDA=ON -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
-    && cmake --build /llama.cpp/build --config Release -j$(nproc)
-RUN echo ">>> llama.cpp CUDA build complete <<<"
+RUN git clone https://github.com/ggerganov/llama.cpp /llama.cpp --depth=1
+
+# libcuda.so.1 is a driver lib only on the host — use the stub for building
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 &&     echo "/usr/local/cuda/lib64/stubs" > /etc/ld.so.conf.d/cuda-stubs.conf &&     ldconfig
+
+RUN cmake -B /llama.cpp/build -S /llama.cpp \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLAMA_CURL=OFF \
+    -DGGML_CUDA=ON \
+    -DLLAMA_BUILD_TESTS=OFF \
+    -DLLAMA_BUILD_EXAMPLES=OFF \
+    -DLLAMA_BUILD_BENCH=OFF
+
+RUN cmake --build /llama.cpp/build --config Release -j$(nproc) --target llama-server --target llama-cli ||     cmake --build /llama.cpp/build --config Release -j$(nproc) --target server
+
+RUN find /llama.cpp/build/bin -type f -executable 2>/dev/null || echo "No executables in bin/"
+RUN find /llama.cpp/build -name "llama-server" 2>/dev/null || echo "llama-server NOT FOUND"
 RUN test -f /llama.cpp/build/bin/llama-server || (echo "ERROR: llama-server was not built!" && exit 1)
+RUN echo ">>> llama.cpp CUDA build complete <<<"
 
 WORKDIR /app
 
