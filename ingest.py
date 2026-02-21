@@ -225,6 +225,12 @@ def main() -> None:
     # Step 3: Check hashes — skip unchanged files
     print(f"[3/4] Checking which files need ingestion ...")
     stored_hashes = load_hashes()
+
+    # If collection is empty, force re-ingest regardless of hashes
+    collection_info = client.get_collection(COLLECTION)
+    if collection_info.points_count == 0 and stored_hashes:
+        print("      Collection is empty but hashes exist — forcing full re-ingest.")
+        stored_hashes = {}
     new_hashes = {}
     files_to_ingest = []
 

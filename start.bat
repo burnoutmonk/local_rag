@@ -1,12 +1,14 @@
 @echo off
+setlocal enabledelayedexpansion
 
 :: Load .env file
-for /f "usebackq tokens=1,2 delims==" %%a in (".env") do (
-    if not "%%a"=="" if not "%%a:~0,1%"=="#" set %%a=%%b
+for /f "tokens=1,2 delims==" %%a in ('type .env ^| findstr /v "^#"') do (
+    set %%a=%%b
 )
 
-:: Choose compose files based on CUDA_AVAILABLE
-if "%CUDA_AVAILABLE%"=="true" (
+echo CUDA_AVAILABLE=!CUDA_AVAILABLE!
+
+if "!CUDA_AVAILABLE!"=="true" (
     echo Starting with GPU support...
     docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
 ) else (
@@ -15,8 +17,7 @@ if "%CUDA_AVAILABLE%"=="true" (
 )
 
 if errorlevel 1 (
-    echo.
-    echo ERROR: Docker Compose failed. See errors above.
+    echo ERROR: Docker Compose failed.
     pause
     exit /b 1
 )
