@@ -189,6 +189,8 @@ Using a GPU massively improves generation speed — expect 100–150 tok/s on a 
 
 ### Windows (Docker — recommended)
 
+> ✅ Tested and working with a 4070 Ti on Windows 11 + Docker Desktop.
+
 1. Make sure you have an up to date NVIDIA driver — download from [nvidia.com/drivers](https://www.nvidia.com/Download/index.aspx)
 2. Verify: open CMD and run `nvidia-smi`
 3. Set in `.env`:
@@ -307,21 +309,25 @@ Returns `{"ok": true}` if the API is running.
 
 ```
 .
-|-- data_raw/              # Place your PDF and DOCX files here
-|-- models/                # GGUF model downloaded here automatically
-|-- templates/
-|   └-- index.html         # Browser UI
-|-- config.py              # All settings (native workflow)
-|-- .env.example           # All settings (Docker workflow) — copy to .env
-|-- run.sh                 # Native entry point
-|-- start.py               # Native launcher (Qdrant + LLM + web UI)
-|-- ingest.py              # Parse, chunk, embed, and upsert into Qdrant
-|-- rag_api.py             # FastAPI retrieval + LLM answer API
-|-- download_model.py      # Model downloader (used by Docker)
-|-- test_speed.py          # Measure your LLM's tok/s
-|-- Dockerfile             # Docker image for Python services
-|-- docker-compose.yml     # Full stack orchestration
-└-- requirements.txt
+├── data_raw/                  # Place your PDF and DOCX files here
+├── models/                    # GGUF model downloaded here automatically
+├── templates/
+│   └── index.html             # Browser UI with GPU/CPU status badge
+├── config.py                  # All settings (native workflow)
+├── .env.example               # All settings (Docker workflow) — copy to .env
+├── run.sh                     # Linux/macOS entry point (native or --docker)
+├── start.bat                  # Windows entry point (Docker)
+├── start.py                   # Native launcher (Qdrant + ingest + LLM + API)
+├── ingest.py                  # Parse, chunk, embed, and upsert into Qdrant
+├── rag_api.py                 # FastAPI retrieval + LLM answer API
+├── download_model.py          # Auto model downloader (Docker)
+├── benchmark.py               # LLM speed benchmark (Docker)
+├── test_speed.py              # Manual LLM speed test (native)
+├── Dockerfile                 # CPU image for all Python services
+├── Dockerfile.cuda            # GPU image (CUDA 12, nvidia base)
+├── docker-compose.yml         # Full stack orchestration
+├── docker-compose.gpu.yml     # GPU overlay (merged by start.bat/run.sh)
+└── requirements.txt
 ```
 
 ---
