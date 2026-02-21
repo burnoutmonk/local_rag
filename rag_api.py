@@ -20,6 +20,10 @@ from config import (
 
 LLM_LOCK = threading.Lock()
 
+# ── Analytics store ───────────────────────────────────────────────────────────
+from collections import deque
+metrics_history: deque = deque(maxlen=100)  # keep last 100 queries()
+
 app = FastAPI(title="Local RAG API")
 client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 embedder = SentenceTransformer(EMBED_MODEL_NAME)
@@ -58,6 +62,7 @@ class QueryIn(BaseModel):
     top_k: int = 5
     mode: str = "answer"   # "answer" or "search"
     timeout: int | None = 30
+    max_tokens: int | None = None  # None = use config default
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -65,11 +70,17 @@ def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/metrics")
+def metrics():
+    return {"history": list(metrics_history)}
+
+
 @app.get("/health")
 def health():
-    import shutil
+    import os
     gpu_enabled = LLM_GPU_LAYERS != 0
-    cuda_available = shutil.which("nvidia-smi") is not None
+    # Check for CUDA libs which are present in the cuda image
+    cuda_available = os.path.exists("/usr/local/cuda/lib64/libcudart.so") or                      os.path.exists("/usr/local/cuda/lib64/libcudart.so.12")
     return {
         "ok": True,
         "gpu_enabled": gpu_enabled,
@@ -159,9 +170,11 @@ def answer(q: QueryIn):
         "top_p": LLM_TOP_P,
         "top_k": LLM_TOP_K,
         "min_p": LLM_MIN_P,
-        "max_tokens": estimate_max_tokens(q.timeout, q.top_k),
+        "max_tokens": q.max_tokens if q.max_tokens else estimate_max_tokens(q.timeout, q.top_k),
     }
 
+    import time as _time
+    _t_start = _time.time()
     if not LLM_LOCK.acquire(blocking=False):
         return {"query": q.query, "answer": "Server busy -- please try again shortly.", "citations": []}
     try:
@@ -178,4 +191,18 @@ def answer(q: QueryIn):
         LLM_LOCK.release()
 
     text = data["choices"][0]["message"]["content"]
-    return {"query": q.query, "answer": text, "citations": citations}
+    usage = data.get("usage", {})
+    prompt_tokens = usage.get("prompt_tokens", 0)
+    completion_tokens = usage.get("completion_tokens", 0)
+    import time as _time
+    elapsed = _time.time() - _t_start
+    tps = round(completion_tokens / elapsed, 1) if completion_tokens and elapsed > 0 else TOKENS_PER_SECOND
+    metrics_history.append({
+        "timestamp": _time.time(),
+        "query": q.query[:80],
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "tokens_per_second": tps,
+        "response_time": round(elapsed, 2),
+    })
+    return {"query": q.query, "answer": text, "citations": citations, "usage": usage}
