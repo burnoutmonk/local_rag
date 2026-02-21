@@ -92,31 +92,50 @@ Open `.env` and set at minimum:
 
 ---
 
-#### Option A — Docker Compose ✅ Recommended
+#### Option A — Windows (Docker Desktop)
 
-No manual setup required. Docker handles everything — Python, llama.cpp, Qdrant, ingestion, and the web UI.
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) then double-click `start.bat` or run:
 
-```bash
-docker compose up -d
+```cmd
+start.bat
 ```
 
-Then open `http://localhost:8000`.
+This starts all services in the background, waits until everything is ready, and opens your browser automatically at `http://localhost:8000`.
+
+To stop:
+```cmd
+docker compose down
+```
+
+To enable GPU:
+```env
+# in .env
+CUDA_AVAILABLE=true
+LLM_GPU_LAYERS=-1
+```
+Then re-run `start.bat`.
+
+---
+
+#### Option B — Linux / macOS (Docker)
+
+```bash
+cp .env.example .env    # adjust if needed
+./run.sh --docker
+```
+
+Opens your browser automatically when ready. Same GPU settings as above via `.env`.
 
 To stop:
 ```bash
 docker compose down
 ```
 
-To view logs:
-```bash
-docker compose logs -f
-```
-
 ---
 
-#### Option B — Native (Linux/macOS/WSL2)
+#### Option C — Linux / macOS (Native)
 
-Runs everything directly on your machine. Easier to debug and faster iteration.
+Runs everything directly on your machine without Docker (except Qdrant). Easier to debug and faster iteration during development.
 
 ```bash
 chmod +x run.sh
@@ -129,7 +148,8 @@ This automatically:
 3. Downloads the model from HuggingFace
 4. Starts Qdrant via Docker
 5. Ingests documents from `data_raw/`
-6. Starts the web UI at `http://localhost:8000`
+6. Measures LLM speed and updates `config.py`
+7. Starts the web UI at `http://localhost:8000`
 
 Press `Ctrl+C` to stop all services.
 
