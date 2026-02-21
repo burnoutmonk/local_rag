@@ -29,6 +29,17 @@ from config import (
     API_HOST, API_PORT,
 )
 
+
+def check_gpu_config() -> None:
+    """Warn if user has a CUDA GPU but hasn't enabled GPU layers in config."""
+    if LLM_GPU_LAYERS != 0:
+        return
+    result = subprocess.run(["nvidia-smi"], capture_output=True, text=True)
+    if result.returncode == 0:
+        print("  NOTE: NVIDIA GPU detected but LLM_GPU_LAYERS is set to 0 in config.py.")
+        print("  For much faster inference, set LLM_GPU_LAYERS = -1 in config.py")
+        print("  (make sure CUDA is installed first — see README for instructions)\n")
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 QDRANT_TIMEOUT = 30
 LLM_TIMEOUT    = 180  # 3 minutes — large models can take a while to load
@@ -98,6 +109,16 @@ def start_qdrant(procs: list) -> None:
     section("Step 2/5 — Starting Qdrant")
     require("docker", "Install Docker from https://docs.docker.com/get-docker/")
 
+    # Check docker permission first
+    perm_check = subprocess.run(["docker", "info"], capture_output=True, text=True)
+    if perm_check.returncode != 0 and "permission denied" in perm_check.stderr:
+        print("ERROR: Permission denied when connecting to Docker.")
+        print("  Fix it by running:")
+        print("    sudo usermod -aG docker $USER")
+        print("    newgrp docker")
+        print("  Then try again.")
+        sys.exit(1)
+
     running = subprocess.run(
         ["docker", "ps", "--filter", "name=qdrant", "--format", "{{.Names}}"],
         capture_output=True, text=True,
@@ -117,7 +138,7 @@ def start_qdrant(procs: list) -> None:
         subprocess.run([
             "docker", "run", "-d", "--name", "qdrant",
             "-p", f"{QDRANT_PORT}:6333",
-            "-v", "qdrant_storage:/qdrant/storage",  # persist data across restarts
+            "-v", "qdrant_storage:/qdrant/storage",
             "qdrant/qdrant",
         ], check=True)
 
@@ -279,6 +300,8 @@ def main() -> None:
             run_ingest()
         else:
             print("\n  Skipping ingestion (--skip-ingest).")
+
+        check_gpu_config()
 
         if not args.skip_llm:
             start_llm(procs)

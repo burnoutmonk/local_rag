@@ -28,6 +28,53 @@ PDF / DOCX files
 
 ---
 
+## GPU Acceleration
+
+Using a GPU dramatically improves generation speed:
+
+| Hardware | Expected Speed | Notes |
+|---|---|---|
+| CPU only (4-8B model) | 3–15 tok/s | Default, works everywhere |
+| NVIDIA GPU (4070 Ti) | 100–150 tok/s | Requires CUDA setup |
+| NVIDIA GPU (3090/4090) | 150–200 tok/s | Requires CUDA setup |
+
+### Enabling GPU on Linux
+
+1. Make sure your NVIDIA drivers are installed: `nvidia-smi` should show your GPU
+2. Install CUDA toolkit:
+```bash
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_amd64.deb
+sudo dpkg -i cuda-keyring_1.1-1_amd64.deb
+sudo apt update
+sudo apt install cuda-toolkit-12-6
+echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+3. Verify with `nvcc --version`
+4. Run `./run.sh` — it will automatically detect CUDA and build llama.cpp with GPU support
+
+### Enabling GPU on WSL2
+
+1. Install the [NVIDIA WSL2 driver](https://developer.nvidia.com/cuda/wsl) on **Windows** (not inside WSL)
+2. Verify your GPU is visible inside WSL: `nvidia-smi`
+3. Follow the same CUDA toolkit steps as Linux above
+4. Run `./run.sh`
+
+### Enabling GPU in config.py
+
+After setting up CUDA, update `config.py`:
+```python
+LLM_GPU_LAYERS = -1      # -1 = offload all layers to GPU
+LLM_CONTEXT = 32768      # GPU can handle larger context windows
+```
+
+If llama.cpp was already built without CUDA, delete the build and rerun:
+```bash
+rm -rf llama.cpp/build
+./run.sh
+```
+
 ## Platform Support
 
 | Platform | Supported |
